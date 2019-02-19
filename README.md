@@ -21,7 +21,7 @@ BLVD dataset contains 654 high-resolution video clips owing 120k frames extracte
 The 654 video clips (42.7GB) of BLVD can be downloaded **here**.
 
 ### FILES
-The dataset is saved in terms of the light conditions (daytime and nighttime) and the participant density (low and high). The file name is set as **“A-B-No.”**, where A denotes the light condition, such as **“D”** and **“N”**, and B specifies the participant density, such as  **“L”** and **“H”**, and No. is the clip index. For each clip, we save the original image data (each image has the resolution of 1920×500) and associated label file. The storage format of the label file can be seen in README file.
+The dataset is saved in terms of the light conditions (daytime and nighttime) and the participant density (low and high). The file name is set as **“A-B-No.”**, where A denotes the light condition, such as **“D”** and **“N”**, and B specifies the participant density, such as  **“L”** and **“H”**, and No. is the clip index. For each clip, we save the original image data (each image has the resolution of 1920×500) and associated label file. The storage format of the label file can be seen in **README** file.
 
 ### CITATION
 
