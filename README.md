@@ -1,6 +1,6 @@
-# BVLD
+# BLVD
 
-BVLD is a large scale 5D semantics dataset collected by Visual Cognitive Computing and Intelligent Vehicles Lab.
+BLVD is a large scale 5D semantics dataset collected by Visual Cognitive Computing and Intelligent Vehicles Lab.
 
 **BLVD: Building A Large-scale 5D Semantics Benchmark for Autonomous Driving**
 
