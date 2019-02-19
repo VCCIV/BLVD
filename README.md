@@ -6,6 +6,9 @@ BLVD is a large scale 5D semantics dataset collected by Visual Cognitive Computi
 
 [Jianru Xue](http://gr.xjtu.edu.cn/web/jrxue), [Jianwu Fang](http://ec.chd.edu.cn/info/1141/2803.htm), Tao Li, Bohua Zhang, Pu Zhang, Zhen Ye , Jian Dou
 
+[![BLVD](https://github.com/VCCIV/BLVD/1.jpg)]
+
+
 ### About
 
 In autonomous driving community, numerous benchmarks have been established to assist the tasks of 3D/2D object detection, stereo vision, semantic/instance segmentation. However, the more meaningful dynamic evolution of the surrounding objects of ego-vehicle is rarely exploited, and lacks a large-scale dataset platform. To address this, we introduce BLVD, a large-scale 5D semantics benchmark which does not concentrate on the static detection or semantic/instance segmentation tasks tackled adequately before. Instead, BLVD aims to provide a platform for the tasks of dynamic 4D (3D+temporal) tracking, 5D (4D+interactive) interactive event recognition and intention prediction.
@@ -18,7 +21,7 @@ BLVD dataset contains 654 high-resolution video clips owing 120k frames extracte
 The 654 video clips (42.7GB) of BLVD can be downloaded **here**.
 
 ### FILES
-The dataset is saved in terms of the light conditions (daytime and nighttime) and the participant density (low and high). The file name is set as **“A-B-No.”**, where A denotes the light condition, such as **“D”** and **“N”**, and B specifies the participant density, such as  **“L”**and **“H”**, and No. is the clip index. For each clip, we save the original image data (each image has the resolution of 1920×500) and associated label file. The storage format of the label file can be seen in README file.
+The dataset is saved in terms of the light conditions (daytime and nighttime) and the participant density (low and high). The file name is set as **“A-B-No.”**, where A denotes the light condition, such as **“D”** and **“N”**, and B specifies the participant density, such as  **“L”** and **“H”**, and No. is the clip index. For each clip, we save the original image data (each image has the resolution of 1920×500) and associated label file. The storage format of the label file can be seen in README file.
 
 ### CITATION
 
