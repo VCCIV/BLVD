@@ -6,7 +6,7 @@ BLVD is a large scale 5D semantics dataset collected by Visual Cognitive Computi
 
 [Jianru Xue](http://gr.xjtu.edu.cn/web/jrxue), [Jianwu Fang](http://ec.chd.edu.cn/info/1141/2803.htm), Tao Li, Bohua Zhang, Pu Zhang, Zhen Ye , Jian Dou
 
-[![BLVD](https://github.com/VCCIV/BLVD/1.jpg)]
+[![BLVD](https://github.com/VCCIV/BLVD/1.png)]
 
 
 ### About
