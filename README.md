@@ -4,7 +4,7 @@ BLVD is a large scale 5D semantics dataset collected by Visual Cognitive Computi
 
 **BLVD: Building A Large-scale 5D Semantics Benchmark for Autonomous Driving**
 
-[Jianru Xue](http://gr.xjtu.edu.cn/web/jrxue), [Jianwu Fang](http://ec.chd.edu.cn/info/1141/2803.htm), Tao Li, Bohua Zhang, Pu Zhang, Zhen Ye , Jian Dou
+Jianru Xue, Jianwu Fang, Tao Li, Bohua Zhang, Pu Zhang, Zhen Ye and Jian Dou
 
 ![](https://github.com/VCCIV/BLVD/blob/master/1.png)
 The task flow of BLVD with 5D semantic annotations: (a) 3D detection, (b) 4D tracking, (c) 5D interactive event recognition and (d) 5D intention prediction.
