@@ -26,10 +26,10 @@ The dataset is saved in terms of the light conditions (daytime and nighttime) an
 ### CITATION
 
 ```
-@article{blvdICRA2019, 
-  title={BLVD: Building A Large-scale 5D Semantics Benchmark for Autonomous Driving}, 
-  author={Jianru Xue, Jianwu Fang, Tao Li, Bohua Zhang, Pu Zhang, Zhen Ye , Jian Dou}, 
-  booktitle={Proc. International Conference on Robotics and Automation},, 
+@inproceedings{blvdICRA2019,
+  title={{BLVD}: Building A Large-scale 5D Semantics Benchmark for Autonomous Driving},
+  author={Jianru Xue and Jianwu Fang and Tao Li and Bohua Zhang and Pu Zhang and Zhen Ye and Jian Dou},
+  booktitle={Proc. International Conference on Robotics and Automation, in press},
   year={2019}
 }
 ```
