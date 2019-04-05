@@ -18,8 +18,8 @@ In autonomous driving community, numerous benchmarks have been established to as
 BLVD dataset contains 654 high-resolution video clips owing 120k frames extracted from Changshu, Jiangsu Province, China, where the Intelligent Vehicle Proving Center of China (IVPCC) is located. The frame rate is 10fps/sec for RGB data and 3D point cloud. We fully annotated all the frames and totally yield 249, 129 3D annotations, 4, 902 independent individuals for tracking with the length of overall 214, 922 points, 6, 004 valid fragments for 5D interactive event recognition, and 4, 900 individuals for 5D intention prediction. These tasks are contained in four kinds of scenarios depending on the object density (low and high) and light conditions (daytime and nighttime).
 
 ### Download
-The 654 video clips (42.7GB) of BLVD can be downloaded [here](https://pan.baidu.com/s/1A6ggD7KOMZdlNmPMNO7KLg).and the password is **xpo4**.For google drive,[here](https://drive.google.com/open?id=1-TT7rcpjgYTm9ED82AgJ2cOT9Bjgxa1x)
-
+The 654 video clips (42.7GB) of BLVD can be downloaded [here](https://pan.baidu.com/s/1A6ggD7KOMZdlNmPMNO7KLg)..For google drive,[here](https://drive.google.com/open?id=1-TT7rcpjgYTm9ED82AgJ2cOT9Bjgxa1x)
+If you want to use BLVD, you just need to send your name and the institution to the email blvddata@outlook.com. We will send the code for downloading immediately. Thanks for your attention.
 ### FILES
 The dataset is saved in terms of the light conditions (daytime and nighttime) and the participant density (low and high). The file name is set as **“A-B-No.”**, where A denotes the light condition, such as **“D”** and **“N”**, and B specifies the participant density, such as  **“L”** and **“H”**, and No. is the clip index. For each clip, we save the original image data (each image has the resolution of 1920×500) and associated label file. The storage format of the label file can be seen in **label instruction** file.
 
