@@ -1,0 +1,41 @@
+Some illustrations of BLVD.
+Label illustration: In the label files, we correspond each frame (*.jpg) with its 3D point cloud (*.txt). There are 13 values in each row of the label files (e.g., "000001.txt") which are saved in the "Label file". The meaning of these values are:
+
+1:IDs of objects;
+
+2:Driving scenario category of ego vehicle 
+{
+(1)straght driving in highway with low density of participants;
+(2)overtaking in highway with low density of participants;
+(3)straght driving in highway with high density of participants;
+(4)straght driving in urban road with low density of participants;
+(5)overtaking in urban road with low density of participants;
+(6)straght driving in urban road with high density of participants, and
+(7)intersection.
+}
+
+3:Behaviour categories of ego vehicle 
+{
+(1)straight accelerating;
+(2)straight decelerating;
+(3)turning right;
+(4)turning left;
+(5)uniformly straight driving;
+(6)changing line to left;
+(7)changing line to right, and 
+(8)stopping.
+};
+
+4:Object categories: pedestrian(1), vehicle(2), and rider(3);
+
+5:Interactive behaviour of other object surrounding ego vehicle (specified in the original paper);
+The values from the 6-th one to the 13-th one are denoted in the 3D point cloud.
+
+6-11:The location information of 3D bounding box, containing the 3D box and direction;
+
+12:The height value of the top surface of 3D bounding box;
+
+13:The height value of the bottom surface of 3D bounding box;
+
+Illustration of training and testing list: 
+In BLVD, we denoted the training list and testing list, in which the first value in each row of the list (e.g., 9/M_H_m23_7_103) can be ignored. In other words, the field of "M_H_m23_7_103" is useful.
