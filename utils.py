@@ -255,7 +255,7 @@ if __name__ == "__main__":
         "/home/doujian/Desktop/Rt.mat",
         "/home/doujian/Desktop/Calib_Results.mat")
     """ 3D LiDAR """
-    #Todo: Use matlab function to transform the .txt file to .bin file
+    #Todo: Use matlab function (MatlabFunctionForLiDAR) to transform the .txt file to .bin file
     #Todo: Reference: https://github.com/DrGabor/LiDAR
     lidar = load_velo_scan("/home/doujian/Desktop/Dataset/lidar/000001.bin")
 
