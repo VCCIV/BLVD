@@ -43,13 +43,16 @@ class Object3d(object):
         self.l = data[7]  # length
         self.w = data[8]  # width
         self.h = data[12] - data[11]  # height
-        '''
-        TODO: This Representation is wrong
-        self.ry = math.atan(
-            data[9] / (data[10] + 1e-16))  # yaw angle (around Y-axis in LiDAR coordinates) [-pi..pi]
-        '''
+
+        # TODO: Yaw angle (around Y-axis in LiDAR coordinates) [-pi..pi]
+
         self.sin_ry = data[9]     # sin(yaw angle)
         self.cos_ry = data[10]    # cos(yaw angle)
+
+        if self.sin_ry >= 0:
+            self.ry = math.acos(data[10])
+        else:
+            self.ry = (-1) * math.acos(data[10])
 
     def print_object(self):
         print('3d bbox h,w,l: %f, %f, %f' %
@@ -225,7 +228,7 @@ def show_lidar_on_image(pc_data, img, calib):
     print("point cloud in img fov:\t", imgfov_pts_2d.shape)
     imgfov_pc_rect = calib.project_velo_to_rect(imgfov_pc_3d)
 
-    print(np.max(imgfov_pc_rect[:,2]),np.min(imgfov_pc_rect[:,2]))
+    print(np.max(imgfov_pc_rect[:, 2]), np.min(imgfov_pc_rect[:, 2]))
 
     cmap = plt.get_cmap("hsv", 256)
     cmap = np.array([cmap(i) for i in range(256)])[:, :3] * 255
@@ -244,6 +247,145 @@ def show_lidar_on_image(pc_data, img, calib):
     return img
 
 
+"""" Simplest drawing LiDAR Data """
+
+
+def draw_lidar_simple(pc_data, color=None):
+    """
+     Draw lidar points. simplest set up.
+    :param pc_data: input point cloud
+    :param color:
+    :return:
+    """
+    if "mlab" not in sys.modules:
+        try:
+            import mayavi.mlab as mlab
+        except BaseException:
+            print("mlab module should be installed")
+            return
+
+    fig = mlab.figure(
+        figure=None, bgcolor=(
+            0, 0, 0), fgcolor=None, engine=None, size=(
+            1600, 1000))
+    if color is None:
+        color = pc_data[:, 2]
+    # draw points
+    mlab.points3d(pc_data[:, 0], pc_data[:, 1], pc_data[:, 2], color, color=None, mode='point', colormap='gnuplot', scale_factor=1,
+                  figure=fig)
+    # draw origin
+    mlab.points3d(0, 0, 0, color=(1, 1, 1), mode='sphere', scale_factor=0.2)
+    # draw axis
+    axes = np.array([
+        [2., 0., 0., 0.],
+        [0., 2., 0., 0.],
+        [0., 0., 2., 0.],
+    ], dtype=np.float64)
+    mlab.plot3d([0, axes[0, 0]], [0, axes[0, 1]], [0, axes[0, 2]],
+                color=(1, 0, 0), tube_radius=None, figure=fig)
+    mlab.plot3d([0, axes[1, 0]], [0, axes[1, 1]], [0, axes[1, 2]],
+                color=(0, 1, 0), tube_radius=None, figure=fig)
+    mlab.plot3d([0, axes[2, 0]], [0, axes[2, 1]], [0, axes[2, 2]],
+                color=(0, 0, 1), tube_radius=None, figure=fig)
+    mlab.view(azimuth=180, elevation=70, focalpoint=[12.0909996, -1.04700089, -2.03249991], distance=62.0,
+              figure=fig)
+    return fig
+
+
+def draw_lidar(pc, color=None, fig=None, bgcolor=(0, 0, 0),
+               pts_scale=1, pts_mode='point', pts_color=None):
+    """
+     Draw lidar points
+    :param pc: numpy array (n,3) of XYZ
+    :param color: numpy array (n) of intensity or whatever
+    :param fig: mayavi figure handler, if None create new one otherwise will use it
+    :param bgcolor:
+    :param pts_scale:
+    :param pts_mode:
+    :param pts_color:
+    :return: created or used fig
+    """
+
+    if "mlab" not in sys.modules:
+        try:
+            import mayavi.mlab as mlab
+        except BaseException:
+            print("mlab module should be installed")
+            return
+
+    if fig is None:
+        fig = mlab.figure(
+            figure=None,
+            bgcolor=bgcolor,
+            fgcolor=None,
+            engine=None,
+            size=(
+                1600,
+                1000))
+    if color is None:
+        color = pc[:, 2]
+    mlab.points3d(pc[:, 0], pc[:, 1], pc[:, 2], color, color=pts_color, mode=pts_mode, colormap='gnuplot',
+                  scale_factor=pts_scale, figure=fig)
+
+    # draw origin
+    mlab.points3d(0, 0, 0, color=(1, 1, 1), mode='sphere', scale_factor=0.2)
+
+    # draw axis
+    axes = np.array([
+        [2., 0., 0., 0.],
+        [0., 2., 0., 0.],
+        [0., 0., 2., 0.],
+    ], dtype=np.float64)
+    mlab.plot3d([0, axes[0, 0]], [0, axes[0, 1]], [0, axes[0, 2]],
+                color=(1, 0, 0), tube_radius=None, figure=fig)
+    mlab.plot3d([0, axes[1, 0]], [0, axes[1, 1]], [0, axes[1, 2]],
+                color=(0, 1, 0), tube_radius=None, figure=fig)
+    mlab.plot3d([0, axes[2, 0]], [0, axes[2, 1]], [0, axes[2, 2]],
+                color=(0, 0, 1), tube_radius=None, figure=fig)
+
+    # draw fov Todo: update to real sensor spec.
+    fov = np.array([  # 45 degree
+        [20., 20., 0., 0.],
+        [20., -20., 0., 0.],
+    ], dtype=np.float64)
+
+    mlab.plot3d([0, fov[0, 0]], [0, fov[0, 1]], [0, fov[0, 2]], color=(1, 1, 1), tube_radius=None, line_width=1,
+                figure=fig)
+    mlab.plot3d([0, fov[1, 0]], [0, fov[1, 1]], [0, fov[1, 2]], color=(1, 1, 1), tube_radius=None, line_width=1,
+                figure=fig)
+
+    # draw square region
+    TOP_Y_MIN = -20
+    TOP_Y_MAX = 20
+    TOP_X_MIN = 0
+    TOP_X_MAX = 40
+    TOP_Z_MIN = -2.0
+    TOP_Z_MAX = 0.4
+
+    x1 = TOP_X_MIN
+    x2 = TOP_X_MAX
+    y1 = TOP_Y_MIN
+    y2 = TOP_Y_MAX
+    mlab.plot3d([x1, x1], [y1, y2], [0, 0], color=(0.5, 0.5, 0.5),
+                tube_radius=0.1, line_width=1, figure=fig)
+    mlab.plot3d([x2, x2], [y1, y2], [0, 0], color=(0.5, 0.5, 0.5),
+                tube_radius=0.1, line_width=1, figure=fig)
+    mlab.plot3d([x1, x2], [y1, y1], [0, 0], color=(0.5, 0.5, 0.5),
+                tube_radius=0.1, line_width=1, figure=fig)
+    mlab.plot3d([x1, x2], [y2, y2], [0, 0], color=(0.5, 0.5, 0.5),
+                tube_radius=0.1, line_width=1, figure=fig)
+
+    # mlab.orientation_axes()
+    mlab.view(azimuth=180, elevation=70, focalpoint=[
+              12.0909996, -1.04700089, -2.03249991], distance=62.0, figure=fig)
+
+    return fig
+
+# Todo: draw 3d box in image and lidar
+
+# Todo: transform 3d box to 2d box in image
+
+
 if __name__ == "__main__":
 
     # test 000001
@@ -255,8 +397,8 @@ if __name__ == "__main__":
         "/home/doujian/Desktop/Rt.mat",
         "/home/doujian/Desktop/Calib_Results.mat")
     """ 3D LiDAR """
-    #Todo: Use matlab function (MatlabFunctionForLiDAR) to transform the .txt file to .bin file
-    #Todo: Reference: https://github.com/DrGabor/LiDAR
+    # Todo: Use matlab function (MatlabFunctionForLiDAR) to transform the .txt file to .bin file
+    # Todo: Reference: https://github.com/DrGabor/LiDAR
     lidar = load_velo_scan("/home/doujian/Desktop/Dataset/lidar/000001.bin")
 
     velo_data = lidar[:, :3]
