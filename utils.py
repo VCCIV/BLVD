@@ -6,7 +6,6 @@ import numpy as np
 import cv2
 from PIL import Image
 import argparse
-import math
 import scipy.io as sio
 """ Display """
 import matplotlib.pyplot as plt
@@ -39,20 +38,31 @@ class Object3d(object):
             data[6],
             (data[12] +
              data[11]) /
-            2]  # coordinate x,y,z
+            2]  # coordinate x,y,z   <====> length width height
         self.l = data[7]  # length
         self.w = data[8]  # width
         self.h = data[12] - data[11]  # height
 
         # TODO: Yaw angle (around Y-axis in LiDAR coordinates) [-pi..pi]
 
-        self.sin_ry = data[9]     # sin(yaw angle)
-        self.cos_ry = data[10]    # cos(yaw angle)
+        # sin(yaw angle)
+        self.sin_ry = data[9] / \
+            np.sqrt(data[9] * data[9] + data[10] * data[10])
+        # cos(yaw angle)
+        self.cos_ry = data[10] / \
+            np.sqrt(data[9] * data[9] + data[10] * data[10])
+        print("-----------------------")
+        print(self.sin_ry)
+        print(self.cos_ry)
 
         if self.sin_ry >= 0:
-            self.ry = math.acos(data[10])
+            self.ry = np.arccos(data[10])
         else:
-            self.ry = (-1) * math.acos(data[10])
+            self.ry = (-1) * np.arccos(data[10])
+
+        print("rotate y-axis\t", np.rad2deg(self.ry))
+
+        print("-----------------------")
 
     def print_object(self):
         print('3d bbox h,w,l: %f, %f, %f' %
@@ -169,6 +179,54 @@ class Calibration(object):
         """
         pts_3d_rect = self.project_velo_to_rect(pts_3d_velo)
         return self.project_rect_to_image(pts_3d_rect)
+
+
+def compute_box_corners_3d(object3d: Object3d) -> np.array:
+    """Computes the 3D bounding box corner positions from an Object3d
+
+    :param object3d: object3d to compute corners from
+    :return: a numpy array of 3D corners if the box is in front of the camera,
+             an empty array otherwise
+    """
+
+    # Compute rotational matrix
+    """
+
+    def roty(t):
+        ''' Rotation along the y-axis. '''
+        c = np.cos(t)
+        s = np.sin(t)
+        return np.array([[c, 0, s],
+                         [0, 1, 0],
+                         [-s, 0, c]])
+
+
+    """
+
+    rot = np.array([[+object3d.cos_ry, 0, +object3d.sin_ry],
+                    [0, 1, 0],
+                    [-object3d.sin_ry, 0, +object3d.cos_ry]])
+
+    l = object3d.l
+    w = object3d.w
+    h = object3d.h
+
+    # 3D Bounding Box Corners
+    x_corners = np.array(
+        [l / 2, l / 2, -l / 2, -l / 2, l / 2, l / 2, -l / 2, -l / 2])
+    y_corners = np.array([0, 0, 0, 0, -h, -h, -h, -h])
+    z_corners = np.array(
+        [w / 2, -w / 2, -w / 2, w / 2, w / 2, -w / 2, -w / 2, w / 2])
+
+    corners_3d = np.dot(rot, np.array([x_corners, y_corners, z_corners]))
+
+    corners_3d[0, :] = corners_3d[0, :] + object3d.t[0]
+    corners_3d[1, :] = corners_3d[1, :] + object3d.t[1]
+    corners_3d[2, :] = corners_3d[2, :] + object3d.t[2]
+
+    # print(corners_3d)
+
+    return np.transpose(corners_3d)
 
 
 def get_lidar_in_image_fov(pts_3d, calib, xmin, ymin,
@@ -381,17 +439,97 @@ def draw_lidar(pc, color=None, fig=None, bgcolor=(0, 0, 0),
 
     return fig
 
+
+def rotx(t):
+    ''' 3D Rotation along the x-axis. '''
+    c = np.cos(t)
+    s = np.sin(t)
+    return np.array([[1, 0, 0],
+                     [0, c, -s],
+                     [0, s, c]])
+
+
+def roty(t):
+    ''' Rotation along the y-axis. '''
+    c = np.cos(t)
+    s = np.sin(t)
+    return np.array([[c, 0, s],
+                     [0, 1, 0],
+                     [-s, 0, c]])
+
+
+def rotz(t):
+    ''' Rotation along the z-axis. '''
+    c = np.cos(t)
+    s = np.sin(t)
+    return np.array([[c, -s, 0],
+                     [s, c, 0],
+                     [0, 0, 1]])
+
 # Todo: draw 3d box in image and lidar
 
 # Todo: transform 3d box to 2d box in image
 
 
+def project_to_image_space(object3d, calib_data,
+                           image_size=None):
+    """
+
+    :param box_3d: Single box_3d to project
+    :param calib_data: Calibration object to be used
+    :param image_size: [w, h] should be provided
+    :return: Projected box in image space [x1, y1, x2, y2]
+            Returns None if box is not inside the image
+    """
+
+    corners_3d = compute_box_corners_3d(object3d)
+    projected = calib_data.project_velo_to_image(corners_3d)
+
+    x1 = np.amin(projected[:,0])
+    y1 = np.amin(projected[:,1])
+    x2 = np.amax(projected[:,0])
+    y2 = np.amax(projected[:,1])
+    img_box = np.array([x1, y1, x2, y2])
+
+    if not image_size:
+        raise ValueError('Image size must be provided')
+
+    image_w = image_size[0]
+    image_h = image_size[1]
+
+    # if img_box[0] > image_w or \
+    #         img_box[1] > image_h or \
+    #         img_box[2] < 0 or \
+    #         img_box[3] < 0:
+    #     return None
+
+    img_box[0] = 0 if img_box[0] < 0 else img_box[0]
+    img_box[1] = 0 if img_box[1] < 0 else img_box[1]
+
+    img_box[2] = image_w if img_box[2] > image_w else img_box[2]
+    img_box[3] = image_h if img_box[3] > image_h else img_box[3]
+
+    img_box_w = img_box[2] - img_box[0]
+    img_box_h = img_box[3] - img_box[1]
+
+    if img_box_w > (image_w * 0.8) and img_box_h > (image_h * 0.8):
+        return None
+
+    return corners_3d,img_box
+
+
 if __name__ == "__main__":
 
     # test 000001
+
     """Annotation"""
-    label_filename = "/home/doujian/Desktop/Dataset/label/000001.txt"
+    label_filename = "/home/doujian/Desktop/Dataset/label/000100.txt"
     objects = read_label(label_filename)
+
+    print("test compute box corners 3d")
+
+    compute_box_corners_3d(objects[0])
+
     """ Calibration """
     calib = Calibration(
         "/home/doujian/Desktop/Rt.mat",
@@ -399,7 +537,7 @@ if __name__ == "__main__":
     """ 3D LiDAR """
     # Todo: Use matlab function (MatlabFunctionForLiDAR) to transform the .txt file to .bin file
     # Todo: Reference: https://github.com/DrGabor/LiDAR
-    lidar = load_velo_scan("/home/doujian/Desktop/Dataset/lidar/000001.bin")
+    lidar = load_velo_scan("/home/doujian/Desktop/Dataset/lidar/000100.bin")
 
     velo_data = lidar[:, :3]
 
@@ -413,6 +551,19 @@ if __name__ == "__main__":
 
     print(lidar_to_img[:, :10])
     """ Image """
-    img = load_image("/home/doujian/Desktop/Dataset/image/1.jpg")
+    img = load_image("/home/doujian/Desktop/Dataset/image/100.jpg")
 
-    show_lidar_on_image(velo_data, img, calib)
+    # show_lidar_on_image(velo_data, img, calib)
+
+    for single_object in objects:
+        corner_3d,single_pts2d = project_to_image_space(
+            single_object, calib, [
+                img.shape[1], img.shape[0]])
+        print(single_pts2d)
+        if single_pts2d is not None:
+            top_left = (int(single_pts2d[0]), int(single_pts2d[1]))
+            down_right = (int(single_pts2d[2]), int(single_pts2d[3]))
+            cv2.rectangle(img, top_left, down_right, (255, 0, 0), 2)
+
+    cv2.imshow("img", img)
+    cv2.waitKey(0)
