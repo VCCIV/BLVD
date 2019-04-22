@@ -202,10 +202,10 @@ def compute_box_corners_3d(object3d: Object3d) -> np.array:
 
 
     """
-
-    rot = np.array([[+object3d.cos_ry, 0, +object3d.sin_ry],
-                    [0, 1, 0],
-                    [-object3d.sin_ry, 0, +object3d.cos_ry]])
+    # coordinate x,y,z   <====> length width height
+    rot = np.array([[+object3d.cos_ry, -object3d.sin_ry, 0],
+                    [+object3d.sin_ry, +object3d.cos_ry, 0],
+                    [0, 0, 1]])
 
     l = object3d.l
     w = object3d.w
@@ -214,11 +214,13 @@ def compute_box_corners_3d(object3d: Object3d) -> np.array:
     # 3D Bounding Box Corners
     x_corners = np.array(
         [l / 2, l / 2, -l / 2, -l / 2, l / 2, l / 2, -l / 2, -l / 2])
-    y_corners = np.array([0, 0, 0, 0, -h, -h, -h, -h])
-    z_corners = np.array(
+    y_corners = np.array(
         [w / 2, -w / 2, -w / 2, w / 2, w / 2, -w / 2, -w / 2, w / 2])
+    z_corners = np.array([h / 2, h / 2, h / 2, h / 2, -
+                          h / 2, -h / 2, -h / 2, -h / 2])
 
     corners_3d = np.dot(rot, np.array([x_corners, y_corners, z_corners]))
+    # corners_3d = np.array([x_corners, y_corners, z_corners])
 
     corners_3d[0, :] = corners_3d[0, :] + object3d.t[0]
     corners_3d[1, :] = corners_3d[1, :] + object3d.t[1]
@@ -467,6 +469,81 @@ def rotz(t):
                      [0, 0, 1]])
 
 # Todo: draw 3d box in image and lidar
+# Test 1
+
+
+def draw_rgb_projections(image, projections, color=(
+        255, 255, 255), thickness=2, darker=1):
+
+    img = image.copy() * darker
+    num = len(projections)
+    forward_color = (255, 255, 0)
+    for n in range(num):
+        qs = projections[n]
+        for k in range(0, 4):
+            i, j = k, (k + 1) % 4
+
+            cv2.line(img, (qs[i, 0], qs[i, 1]), (qs[j, 0],
+                                                 qs[j, 1]), color, thickness)
+
+            i, j = k + 4, (k + 1) % 4 + 4
+            cv2.line(img, (qs[i, 0], qs[i, 1]), (qs[j, 0],
+                                                 qs[j, 1]), color, thickness)
+
+            i, j = k, k + 4
+            cv2.line(img, (qs[i, 0], qs[i, 1]), (qs[j, 0],
+                                                 qs[j, 1]), color, thickness)
+
+        cv2.line(img, (qs[3, 0], qs[3, 1]), (qs[7, 0], qs[7, 1]),
+                 forward_color, thickness)
+        cv2.line(img, (qs[7, 0], qs[7, 1]), (qs[6, 0], qs[6, 1]),
+                 forward_color, thickness)
+        cv2.line(img, (qs[6, 0], qs[6, 1]), (qs[2, 0], qs[2, 1]),
+                 forward_color, thickness)
+        cv2.line(img, (qs[2, 0], qs[2, 1]), (qs[3, 0], qs[3, 1]),
+                 forward_color, thickness)
+        cv2.line(img, (qs[3, 0], qs[3, 1]), (qs[6, 0], qs[6, 1]),
+                 forward_color, thickness)
+        cv2.line(img, (qs[2, 0], qs[2, 1]), (qs[7, 0], qs[7, 1]),
+                 forward_color, thickness)
+
+    return img
+
+
+# Test2
+
+def draw_projected_box3d(image, qs, color=(255, 255, 255), thickness=1):
+    ''' Draw 3d bounding box in image
+        qs: (8,3) array of vertices for the 3d box in following order:
+            1 -------- 0
+           /|         /|
+          2 -------- 3 .
+          | |        | |
+          . 5 -------- 4
+          |/         |/
+          6 -------- 7
+    '''
+    qs = qs.astype(np.int32)
+    for k in range(0, 4):
+        # Ref:
+        # http://docs.enthought.com/mayavi/mayavi/auto/mlab_helper_functions.html
+        i, j = k, (k + 1) % 4
+        # use LINE_AA for opencv3
+        cv2.line(image, (qs[i, 0], qs[i, 1]), (qs[j, 0],
+                                               qs[j, 1]), color, thickness)
+
+        i, j = k + 4, (k + 1) % 4 + 4
+        cv2.line(image, (qs[i, 0], qs[i, 1]), (qs[j, 0],
+                                               qs[j, 1]), color, thickness)
+
+        i, j = k, k + 4
+        cv2.line(image, (qs[i, 0], qs[i, 1]), (qs[j, 0],
+                                               qs[j, 1]), color, thickness)
+    return image
+
+
+# Test 3
+
 
 # Todo: transform 3d box to 2d box in image
 
@@ -485,10 +562,10 @@ def project_to_image_space(object3d, calib_data,
     corners_3d = compute_box_corners_3d(object3d)
     projected = calib_data.project_velo_to_image(corners_3d)
 
-    x1 = np.amin(projected[:,0])
-    y1 = np.amin(projected[:,1])
-    x2 = np.amax(projected[:,0])
-    y2 = np.amax(projected[:,1])
+    x1 = np.amin(projected[:, 0])
+    y1 = np.amin(projected[:, 1])
+    x2 = np.amax(projected[:, 0])
+    y2 = np.amax(projected[:, 1])
     img_box = np.array([x1, y1, x2, y2])
 
     if not image_size:
@@ -515,7 +592,7 @@ def project_to_image_space(object3d, calib_data,
     if img_box_w > (image_w * 0.8) and img_box_h > (image_h * 0.8):
         return None
 
-    return corners_3d,img_box
+    return corners_3d, projected, img_box
 
 
 if __name__ == "__main__":
@@ -523,7 +600,7 @@ if __name__ == "__main__":
     # test 000001
 
     """Annotation"""
-    label_filename = "/home/doujian/Desktop/Dataset/label/000100.txt"
+    label_filename = "/home/doujian/Desktop/Dataset/label/000050.txt"
     objects = read_label(label_filename)
 
     print("test compute box corners 3d")
@@ -537,7 +614,7 @@ if __name__ == "__main__":
     """ 3D LiDAR """
     # Todo: Use matlab function (MatlabFunctionForLiDAR) to transform the .txt file to .bin file
     # Todo: Reference: https://github.com/DrGabor/LiDAR
-    lidar = load_velo_scan("/home/doujian/Desktop/Dataset/lidar/000100.bin")
+    lidar = load_velo_scan("/home/doujian/Desktop/Dataset/lidar/000050.bin")
 
     velo_data = lidar[:, :3]
 
@@ -551,12 +628,12 @@ if __name__ == "__main__":
 
     print(lidar_to_img[:, :10])
     """ Image """
-    img = load_image("/home/doujian/Desktop/Dataset/image/100.jpg")
+    img = load_image("/home/doujian/Desktop/Dataset/image/50.jpg")
 
     # show_lidar_on_image(velo_data, img, calib)
 
     for single_object in objects:
-        corner_3d,single_pts2d = project_to_image_space(
+        corner_3d, projected_3d, single_pts2d = project_to_image_space(
             single_object, calib, [
                 img.shape[1], img.shape[0]])
         print(single_pts2d)
@@ -564,6 +641,7 @@ if __name__ == "__main__":
             top_left = (int(single_pts2d[0]), int(single_pts2d[1]))
             down_right = (int(single_pts2d[2]), int(single_pts2d[3]))
             cv2.rectangle(img, top_left, down_right, (255, 0, 0), 2)
+            # draw_projected_box3d(img, projected_3d)
 
     cv2.imshow("img", img)
     cv2.waitKey(0)
