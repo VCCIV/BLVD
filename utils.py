@@ -56,9 +56,9 @@ class Object3d(object):
         print(self.cos_ry)
 
         if self.sin_ry >= 0:
-            self.ry = np.arccos(data[10])
+            self.ry = np.arccos(self.cos_ry)
         else:
-            self.ry = (-1) * np.arccos(data[10])
+            self.ry = (-1) * np.arccos(self.cos_ry)
 
         print("rotate y-axis\t", np.rad2deg(self.ry))
 
