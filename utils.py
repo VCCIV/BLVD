@@ -4,10 +4,9 @@ import os
 import sys
 import numpy as np
 import cv2
-from PIL import Image
-import argparse
+
 import scipy.io as sio
-""" Display """
+
 import matplotlib.pyplot as plt
 
 
@@ -32,18 +31,17 @@ class Object3d(object):
         self.action_id = int(data[4])  # action id
         """
         extract 3D bounding box information
+        coordinate x,y,z   <====> length width height
         """
         self.t = [
             data[5],
             data[6],
             (data[12] +
              data[11]) /
-            2]  # coordinate x,y,z   <====> length width height
+            2]
         self.l = data[7]  # length
         self.w = data[8]  # width
         self.h = data[12] - data[11]  # height
-
-        # TODO: Yaw angle (around Y-axis in LiDAR coordinates) [-pi..pi]
 
         # sin(yaw angle)
         self.sin_ry = data[9] / \
@@ -51,24 +49,17 @@ class Object3d(object):
         # cos(yaw angle)
         self.cos_ry = data[10] / \
             np.sqrt(data[9] * data[9] + data[10] * data[10])
-        print("-----------------------")
-        print(self.sin_ry)
-        print(self.cos_ry)
 
         if self.sin_ry >= 0:
             self.ry = np.arccos(self.cos_ry)
         else:
             self.ry = (-1) * np.arccos(self.cos_ry)
 
-        print("rotate y-axis\t", np.rad2deg(self.ry))
-
-        print("-----------------------")
-
     def print_object(self):
         print('3d bbox h,w,l: %f, %f, %f' %
               (self.h, self.w, self.l))
-        print('3d bbox location, ry: (%f, %f, %f), (%f,%f)' %
-              (self.t[0], self.t[1], self.t[2], self.sin_ry, self.cos_ry))
+        print('3d bbox location, ry: (%f, %f, %f), (%f)' %
+              (self.t[0], self.t[1], self.t[2], np.rad2deg(self.ry)))
 
 # Calibration
 
@@ -101,6 +92,7 @@ class Calibration(object):
                                                     Point_Velodyne.
         """
         self.Tr_velo_to_cam = Tr_velo_to_cam  # V2C
+        # print(self.Tr_velo_to_cam)
 
         """
         3x3    r0_rect    Rectification matrix, required to transform points
@@ -190,18 +182,6 @@ def compute_box_corners_3d(object3d: Object3d) -> np.array:
     """
 
     # Compute rotational matrix
-    """
-
-    def roty(t):
-        ''' Rotation along the y-axis. '''
-        c = np.cos(t)
-        s = np.sin(t)
-        return np.array([[c, 0, s],
-                         [0, 1, 0],
-                         [-s, 0, c]])
-
-
-    """
     # coordinate x,y,z   <====> length width height
     rot = np.array([[+object3d.cos_ry, -object3d.sin_ry, 0],
                     [+object3d.sin_ry, +object3d.cos_ry, 0],
@@ -213,14 +193,13 @@ def compute_box_corners_3d(object3d: Object3d) -> np.array:
 
     # 3D Bounding Box Corners
     x_corners = np.array(
-        [l / 2, l / 2, -l / 2, -l / 2, l / 2, l / 2, -l / 2, -l / 2])
-    y_corners = np.array(
         [w / 2, -w / 2, -w / 2, w / 2, w / 2, -w / 2, -w / 2, w / 2])
-    z_corners = np.array([h / 2, h / 2, h / 2, h / 2, -
-                          h / 2, -h / 2, -h / 2, -h / 2])
+    y_corners = np.array(
+        [l / 2, l / 2, -l / 2, -l / 2, l / 2, l / 2, -l / 2, -l / 2])
+    z_corners = np.array(
+        [h / 2, h / 2, h / 2, h / 2, -h / 2, -h / 2, -h / 2, -h / 2])
 
     corners_3d = np.dot(rot, np.array([x_corners, y_corners, z_corners]))
-    # corners_3d = np.array([x_corners, y_corners, z_corners])
 
     corners_3d[0, :] = corners_3d[0, :] + object3d.t[0]
     corners_3d[1, :] = corners_3d[1, :] + object3d.t[1]
@@ -441,76 +420,34 @@ def draw_lidar(pc, color=None, fig=None, bgcolor=(0, 0, 0),
 
     return fig
 
+def draw_gt_boxes3d(gt_boxes3d, fig, color=(1,0,0), line_width=2):
 
-def rotx(t):
-    ''' 3D Rotation along the x-axis. '''
-    c = np.cos(t)
-    s = np.sin(t)
-    return np.array([[1, 0, 0],
-                     [0, c, -s],
-                     [0, s, c]])
+    if "mlab" not in sys.modules:
+        try:
+            import mayavi.mlab as mlab
+        except BaseException:
+            print("mlab module should be installed")
+            return
 
-
-def roty(t):
-    ''' Rotation along the y-axis. '''
-    c = np.cos(t)
-    s = np.sin(t)
-    return np.array([[c, 0, s],
-                     [0, 1, 0],
-                     [-s, 0, c]])
-
-
-def rotz(t):
-    ''' Rotation along the z-axis. '''
-    c = np.cos(t)
-    s = np.sin(t)
-    return np.array([[c, -s, 0],
-                     [s, c, 0],
-                     [0, 0, 1]])
-
-# Todo: draw 3d box in image and lidar
-# Test 1
-
-
-def draw_rgb_projections(image, projections, color=(
-        255, 255, 255), thickness=2, darker=1):
-
-    img = image.copy() * darker
-    num = len(projections)
-    forward_color = (255, 255, 0)
+    num = len(gt_boxes3d)
     for n in range(num):
-        qs = projections[n]
-        for k in range(0, 4):
-            i, j = k, (k + 1) % 4
+        b = gt_boxes3d[n]
 
-            cv2.line(img, (qs[i, 0], qs[i, 1]), (qs[j, 0],
-                                                 qs[j, 1]), color, thickness)
+        for k in range(0,4):
 
-            i, j = k + 4, (k + 1) % 4 + 4
-            cv2.line(img, (qs[i, 0], qs[i, 1]), (qs[j, 0],
-                                                 qs[j, 1]), color, thickness)
+            i,j=k,(k+1)%4
+            mlab.plot3d([b[i,0], b[j,0]], [b[i,1], b[j,1]], [b[i,2], b[j,2]], color=color, tube_radius=None, line_width=line_width, figure=fig)
 
-            i, j = k, k + 4
-            cv2.line(img, (qs[i, 0], qs[i, 1]), (qs[j, 0],
-                                                 qs[j, 1]), color, thickness)
+            i,j=k+4,(k+3)%4 + 4
+            mlab.plot3d([b[i,0], b[j,0]], [b[i,1], b[j,1]], [b[i,2], b[j,2]], color=color, tube_radius=None, line_width=line_width, figure=fig)
 
-        cv2.line(img, (qs[3, 0], qs[3, 1]), (qs[7, 0], qs[7, 1]),
-                 forward_color, thickness)
-        cv2.line(img, (qs[7, 0], qs[7, 1]), (qs[6, 0], qs[6, 1]),
-                 forward_color, thickness)
-        cv2.line(img, (qs[6, 0], qs[6, 1]), (qs[2, 0], qs[2, 1]),
-                 forward_color, thickness)
-        cv2.line(img, (qs[2, 0], qs[2, 1]), (qs[3, 0], qs[3, 1]),
-                 forward_color, thickness)
-        cv2.line(img, (qs[3, 0], qs[3, 1]), (qs[6, 0], qs[6, 1]),
-                 forward_color, thickness)
-        cv2.line(img, (qs[2, 0], qs[2, 1]), (qs[7, 0], qs[7, 1]),
-                 forward_color, thickness)
+            i,j=k,k+4
+            mlab.plot3d([b[i,0], b[j,0]], [b[i,1], b[j,1]], [b[i,2], b[j,2]], color=color, tube_radius=None, line_width=line_width, figure=fig)
 
-    return img
+    # mlab.view(azimuth=180,elevation=None,distance=50,focalpoint=[ 12.0909996 , -1.04700089, -2.03249991])#2.0909996 , -1.04700089, -2.03249991
+    return fig
 
 
-# Test2
 
 def draw_projected_box3d(image, qs, color=(255, 255, 255), thickness=1):
     ''' Draw 3d bounding box in image
@@ -528,7 +465,7 @@ def draw_projected_box3d(image, qs, color=(255, 255, 255), thickness=1):
         # Ref:
         # http://docs.enthought.com/mayavi/mayavi/auto/mlab_helper_functions.html
         i, j = k, (k + 1) % 4
-        # use LINE_AA for opencv3
+
         cv2.line(image, (qs[i, 0], qs[i, 1]), (qs[j, 0],
                                                qs[j, 1]), color, thickness)
 
@@ -542,10 +479,6 @@ def draw_projected_box3d(image, qs, color=(255, 255, 255), thickness=1):
     return image
 
 
-# Test 3
-
-
-# Todo: transform 3d box to 2d box in image
 
 
 def project_to_image_space(object3d, calib_data,
@@ -574,11 +507,7 @@ def project_to_image_space(object3d, calib_data,
     image_w = image_size[0]
     image_h = image_size[1]
 
-    # if img_box[0] > image_w or \
-    #         img_box[1] > image_h or \
-    #         img_box[2] < 0 or \
-    #         img_box[3] < 0:
-    #     return None
+
 
     img_box[0] = 0 if img_box[0] < 0 else img_box[0]
     img_box[1] = 0 if img_box[1] < 0 else img_box[1]
@@ -597,40 +526,27 @@ def project_to_image_space(object3d, calib_data,
 
 if __name__ == "__main__":
 
-    # test 000001
 
-    """Annotation"""
     label_filename = "/home/doujian/Desktop/Dataset/label/000050.txt"
     objects = read_label(label_filename)
 
-    print("test compute box corners 3d")
-
-    compute_box_corners_3d(objects[0])
-
-    """ Calibration """
     calib = Calibration(
         "/home/doujian/Desktop/Rt.mat",
         "/home/doujian/Desktop/Calib_Results.mat")
+
     """ 3D LiDAR """
     # Todo: Use matlab function (MatlabFunctionForLiDAR) to transform the .txt file to .bin file
     # Todo: Reference: https://github.com/DrGabor/LiDAR
     lidar = load_velo_scan("/home/doujian/Desktop/Dataset/lidar/000050.bin")
-
     velo_data = lidar[:, :3]
 
-    print(np.max(velo_data[:, 0]), np.min(velo_data[:, 0]))  # length  x
-    print(np.max(velo_data[:, 1]), np.min(velo_data[:, 1]))  # width   y
-    print(np.max(velo_data[:, 2]), np.min(velo_data[:, 2]))  # height  z
-
-    lidar_to_img = calib.project_velo_to_image(velo_data)
-
-    print(lidar_to_img.shape)
-
-    print(lidar_to_img[:, :10])
     """ Image """
     img = load_image("/home/doujian/Desktop/Dataset/image/50.jpg")
 
-    # show_lidar_on_image(velo_data, img, calib)
+
+    lidar_to_img = calib.project_velo_to_image(velo_data)
+
+    show_lidar_on_image(velo_data, img, calib)
 
     for single_object in objects:
         corner_3d, projected_3d, single_pts2d = project_to_image_space(
