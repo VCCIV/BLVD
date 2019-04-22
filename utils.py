@@ -39,8 +39,8 @@ class Object3d(object):
             (data[12] +
              data[11]) /
             2]
-        self.l = data[7]  # length
-        self.w = data[8]  # width
+        self.l = data[7]*2  # length
+        self.w = data[8]*2  # width
         self.h = data[12] - data[11]  # height
 
         # sin(yaw angle)
