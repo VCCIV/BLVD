@@ -183,8 +183,8 @@ def compute_box_corners_3d(object3d: Object3d) -> np.array:
 
     # Compute rotational matrix
     # coordinate x,y,z   <====> length width height
-    rot = np.array([[+object3d.cos_ry, -object3d.sin_ry, 0],
-                    [+object3d.sin_ry, +object3d.cos_ry, 0],
+    rot = np.array([[+object3d.cos_ry, +object3d.sin_ry, 0],
+                    [-object3d.sin_ry, +object3d.cos_ry, 0],
                     [0, 0, 1]])
 
     l = object3d.l
